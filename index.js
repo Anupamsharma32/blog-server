@@ -10,7 +10,7 @@ const multer = require('multer'); // use to upload
 const uploadMiddleware = multer({ dest: 'uploads/' });
 const cookieParser = require('cookie-parser');
 const fs = require('fs');
-app.use(cors({ credentials: true, origin: 'http://localhost:3000' }));
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(__dirname + '/uploads'));
@@ -31,6 +31,18 @@ app.get("/", (req, res) => {
 
 app.post('/register', async (req, res) => {
    const { username, password } = req.body;
+
+   const existingUser = await User.findOne({ username });
+
+   if (existingUser) {
+      return res.status(400).json({
+         success: false,
+         message: "User already exists!",
+      });
+   }
+
+
+
    try {
       const userDoc = await User.create({
          username,
@@ -162,7 +174,7 @@ app.get('/post/:id', async (req, res) => {
 
 
 
-app.listen(4000,()=>{
+app.listen(4000, () => {
    console.log("server is running on 4000")
 });
 
