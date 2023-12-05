@@ -82,10 +82,91 @@ app.get('/profile', (req, res) => {
       res.json(info);
    });
 });
-
+const { updateOne } = require('mongoose');
 app.post('/logout', (req, res) => {
    res.cookie('token', '').json('ok');
 });
+// app.post('/post', uploadMiddleware.single('file'), async (req, res) => {
+//    try {
+//       const { originalname, path } = req.file;
+//       const parts = originalname.split('.');
+//       const ext = parts[parts.length - 1];
+//       const newPath = path + '.' + ext;
+//       fs.renameSync(path, newPath);
+
+//       const { token } = req.cookies;
+//       jwt.verify(token, secret, {}, async (err, info) => {
+//          if (err) {
+//             console.error(err);
+//             return res.status(401).json({ success: false, message: 'Unauthorized' });
+//          }
+
+//          const { title, summary, content } = req.body;
+//          const postDoc = await Post.create({
+//             title,
+//             summary,
+//             content,
+//             cover: newPath,
+//             author: info.id,
+//          });
+//          res.json(postDoc);
+//       });
+
+//    } catch (error) {
+//       console.error(error);
+//       res.status(500).send({
+//          success: false,
+//          message: 'Error in creating post.',
+//          error,
+//       });
+//    }
+// });
+
+// app.put('/post', uploadMiddleware.single('file'), async (req, res) => {
+//    try {
+//       let newPath = null;
+//       if (req.file) {
+//          const { originalname, path } = req.file;
+//          const parts = originalname.split('.');
+//          const ext = parts[parts.length - 1];
+//          newPath = path + '.' + ext;
+//          fs.renameSync(path, newPath);
+//       }
+
+//       const { token } = req.cookies;
+//       jwt.verify(token, secret, {}, async (err, info) => {
+//          if (err) {
+//             console.error(err);
+//             return res.status(401).json({ success: false, message: 'Unauthorized' });
+//          }
+
+//          const { id, title, summary, content } = req.body;
+//          const postDoc = await Post.findById(id);
+
+//          if (!postDoc || JSON.stringify(postDoc.author) !== JSON.stringify(info.id)) {
+//             return res.status(400).json({ success: false, message: 'You are not the author or post not found.' });
+//          }
+
+//          await postDoc.updateOne({
+//             title,
+//             summary,
+//             content,
+//             cover: newPath ? newPath : postDoc.cover,
+//          });
+
+//          res.json(postDoc);
+//       });
+
+//    } catch (error) {
+//       console.error(error);
+//       res.status(500).send({
+//          success: false,
+//          message: 'Error in updating post.',
+//          error,
+//       });
+//    }
+// });
+
 
 app.post('/post', uploadMiddleware.single('file'), async (req, res) => {
    try {
@@ -94,9 +175,14 @@ app.post('/post', uploadMiddleware.single('file'), async (req, res) => {
       const ext = parts[parts.length - 1];
       const newPath = path + '.' + ext;
       fs.renameSync(path, newPath);
+
       const { token } = req.cookies;
       jwt.verify(token, secret, {}, async (err, info) => {
-         if (err) throw err;
+         if (err) {
+            console.error(err);
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+         }
+
          const { title, summary, content } = req.body;
          const postDoc = await Post.create({
             title,
@@ -109,93 +195,59 @@ app.post('/post', uploadMiddleware.single('file'), async (req, res) => {
       });
 
    } catch (error) {
-
-      res.status(400).send({
+      console.error(error);
+      res.status(500).send({
          success: false,
-         message: "Error in creating post !!!!!!! ",
-         error
-      })
-
+         message: 'Error in creating post.',
+         error,
+      });
    }
-
-
 });
-
-const { updateOne } = require('mongoose'); // Import the necessary module for updateOne
-
-// app.put('/post', uploadMiddleware.single('file'), async (req, res) => {
-//    console.log("hello inside the posit");
-//    let newPath = null;
-
-//    if (req.file) {
-//       const { originalname, path } = req.file;
-//       const parts = originalname.split('.');
-//       const ext = parts[parts.length - 1];
-//       newPath = path + '.' + ext;
-//       fs.renameSync(path, newPath);
-//    }
-
-//    const { token } = req.cookies;
-//    jwt.verify(token, "asdfe45we45w345wegw345werjktjwertkj", {}, async (err, info) => {
-//       if (err) throw err;
-//       const { id, title, summary, content } = req.body;
-//       const postDoc = await Post.findById(id);
-//       const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
-
-//       if (!isAuthor) {
-//          return res.status(400).json('you are not the author');
-//       }
-
-//       // Use updateOne method instead of deprecated update
-//       await Post.updateOne(
-//          { _id: id },
-//          {
-//             $set: {
-//                title,
-//                summary,
-//                content,
-//                cover: newPath ? newPath : postDoc.cover,
-//             },
-//          }
-//       );
-
-//       // Fetch the updated document
-//       const updatedPostDoc = await Post.findById(id);
-//       res.json(updatedPostDoc);
-//    });
-// });
 
 app.put('/post', uploadMiddleware.single('file'), async (req, res) => {
-   let newPath = null;
-   if (req.file) {
-      const { originalname, path } = req.file;
-      const parts = originalname.split('.');
-      const ext = parts[parts.length - 1];
-      newPath = path + '.' + ext;
-      fs.renameSync(path, newPath);
-   }
-
-   const { token } = req.cookies;
-   jwt.verify(token, secret, {}, async (err, info) => {
-      if (err) throw err;
-      const { id, title, summary, content } = req.body;
-      const postDoc = await Post.findById(id);
-      const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
-      if (!isAuthor) {
-         return res.status(400).json('you are not the author');
+   try {
+      let newPath = null;
+      if (req.file) {
+         const { originalname, path } = req.file;
+         const parts = originalname.split('.');
+         const ext = parts[parts.length - 1];
+         newPath = path + '.' + ext;
+         fs.renameSync(path, newPath);
       }
-      await postDoc.updateOne({
-         title,
-         summary,
-         content,
-         cover: newPath ? newPath : postDoc.cover,
+
+      const { token } = req.cookies;
+      jwt.verify(token, secret, {}, async (err, info) => {
+         if (err) {
+            console.error(err);
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+         }
+
+         const { id, title, summary, content } = req.body;
+         const postDoc = await Post.findById(id);
+
+         if (!postDoc || JSON.stringify(postDoc.author) !== JSON.stringify(info.id)) {
+            return res.status(400).json({ success: false, message: 'You are not the author or post not found.' });
+         }
+
+         await postDoc.updateOne({
+            title,
+            summary,
+            content,
+            cover: newPath ? newPath : postDoc.cover,
+         });
+
+         res.json(postDoc);
       });
 
-      res.json(postDoc);
-   });
-
+   } catch (error) {
+      console.error(error);
+      res.status(500).send({
+         success: false,
+         message: 'Error in updating post.',
+         error,
+      });
+   }
 });
-
 // ... Other parts of your code
 
 
