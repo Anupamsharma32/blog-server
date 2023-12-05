@@ -10,7 +10,7 @@ const multer = require('multer'); // use to upload
 const uploadMiddleware = multer({ dest: 'uploads/' });
 const cookieParser = require('cookie-parser');
 const fs = require('fs');
-app.use(cors({ credentials: true, origin: 'http://localhost:3000' }));
+app.use(cors({ credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(__dirname + '/uploads'));
